@@ -81,45 +81,52 @@ telescope-shop-microservices/
 - **Helm** - Package manager for Kubernetes (required for Prometheus stack)
 - **AWS account** - With appropriate permissions
 - **AWS CLI** - Configured with appropriate permissions
-- **eksctl** - For EKS cluster management (if using AWS EKS)
+- **eksctl** - For EKS cluster management
 - **Docker Hub account** - For container registry
 
 ### Deployment
 
-1. **Configure Terraform variables:**
-   Create a `terraform.tfvars` file in `infra/s3_backend/`:
-   ```hcl
-   # terraform.tfvars
-   region             = "us-east-1"
-   
-   vpc_cidr           = "10.0.0.0/16"
-   
-   private_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
-   
-   public_subnet_cidrs  = ["10.0.101.0/24", "10.0.102.0/24"]
-   
-   cluster_name       = "telescope-shop"
-   
-   cluster_version    = "1.33"
-   ```
-
-2. **Deploy infrastructure:**
+1. **Deploy S3 backend for Terraform state:**
    ```bash
    cd infra/s3_backend
    terraform init
    terraform apply
    ```
 
-3. **Install AWS Load Balancer Controller:**
+2. **Configure main infrastructure variables:**
+   Create a `terraform.tfvars` file in the `infra/` directory:
+   ```hcl
+   # terraform.tfvars
+   region             = "us-east-1"
+   vpc_cidr           = "10.0.0.0/16"
+   private_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+   public_subnet_cidrs  = ["10.0.101.0/24", "10.0.102.0/24"]
+   cluster_name       = "telescope-shop"
+   cluster_version    = "1.33"
+   ```
+
+3. **Deploy main infrastructure:**
+   ```bash
+   cd infra
+   terraform init
+   terraform apply
+   ```
+
+4. **Configure kubectl for EKS:**
+   ```bash
+   aws eks update-kubeconfig --region us-east-1 --name telescope-shop
+   ```
+
+5. **Install AWS Load Balancer Controller:**
    Follow the detailed instructions in `Install_AWS_Load_Balancer_Controller.md` to set up the AWS Load Balancer Controller with proper IAM roles and policies.
 
-4. **Install ArgoCD:
+6. **Install ArgoCD:**
    ```bash
    kubectl create namespace argocd
    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
    ```
 
-5. **Install Prometheus Stack:
+7. **Install Prometheus Stack:**
    ```bash
    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
    helm repo update
@@ -127,7 +134,7 @@ telescope-shop-microservices/
    helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring
    ```
 
-6. **Access ArgoCD UI:
+8. **Access ArgoCD UI:**
    ```bash
    # Port forward to access ArgoCD UI
    kubectl port-forward svc/argocd-server -n argocd 8080:443
@@ -137,27 +144,27 @@ telescope-shop-microservices/
    ```
    Access ArgoCD at: https://localhost:8080 (username: admin)
 
-7. **Access Prometheus UI:
+9. **Access Prometheus UI:**
    ```bash
    kubectl port-forward svc/prometheus-kube-prometheus-prometheus -n monitoring 9090:9090
    ```
    Access Prometheus at: http://localhost:9090
 
-8. **Access Grafana UI:
+10. **Access Grafana UI:**
    ```bash
    kubectl port-forward svc/prometheus-grafana -n monitoring 3000:80
    
    # Get Grafana admin password
-   kubectl get secret prometheus-grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 -d
+   kubectl get secret -n monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 -d
    ```
    Access Grafana at: http://localhost:3000 (username: admin)
 
-9. **Deploy to Kubernetes:
+11. **Deploy application to Kubernetes:**
    ```bash
    kubectl apply -f kubernetes/
    ```
 
-10. **Access the application:
+12. **Access the application:**
    - Frontend: Available via AWS Application Load Balancer
    - Services: Internal cluster communication
 
