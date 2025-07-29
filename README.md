@@ -176,6 +176,8 @@ Configure the following secrets in your GitHub repository (Settings > Secrets an
 - `DOCKERHUB_USERNAME` - Your Docker Hub username
 - `DOCKERHUB_TOKEN` - Your Docker Hub access token
 - `MY_ACTIONS_TOKEN` - GitHub Personal Access Token with repo permissions for updating Kubernetes manifests
+- `USER_EMAIL` - Your Git email for commits
+- `USER_NAME` - Your Git username for commits
 
 ## Contributing
 
